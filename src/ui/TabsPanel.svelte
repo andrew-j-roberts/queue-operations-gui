@@ -1,17 +1,19 @@
 <script>
   import { selectedPage, openPages } from "../stores";
   import { navigate, close } from "../routes";
-  import SvgClose from "./icons/SvgClose.svelte";
-  import SvgHome from "./icons/SvgHome.svelte";
-  import SvgImport from "./icons/SvgImport.svelte";
-  import SvgExport from "./icons/SvgExport.svelte";
-  import SvgQueue from "./icons/SvgQueue.svelte";
-  import SvgSimulator from "./icons/SvgSimulator.svelte";
-  import SvgConfig from "./icons/SvgConfig.svelte";
-  import SvgTable from "./icons/SvgTable.svelte";
+  import SvgClose from "../icons/SvgClose.svelte";
+  import SvgHome from "../icons/SvgHome.svelte";
+  import SvgImport from "../icons/SvgImport.svelte";
+  import SvgExport from "../icons/SvgExport.svelte";
+  import SvgQueue from "../icons/SvgQueue.svelte";
+  import SvgServer from "../icons/SvgServer.svelte";
+  import SvgConfig from "../icons/SvgConfig.svelte";
+  import SvgAdd from "../icons/SvgAdd.svelte";
+  import SvgDuplicate from "../icons/SvgDuplicate.svelte";
+  import SvgInfo from "../icons/SvgInfo.svelte";
 </script>
 
-<div class="flex h-12 bg-gray-300">
+<div class="flex flex-shrink-0 h-12 bg-gray-200">
   {#each Object.values($openPages) as page}
     <!-- layout -->
     <div
@@ -20,30 +22,29 @@
       class:selected={$selectedPage.id == page.id}
     >
       <!-- label -->
-      <button class="flex items-center h-full pr-1" on:click={() => navigate(page)}>
+      <button class="flex items-center h-full pr-2" on:click={() => navigate(page)}>
         <!-- icon -->
-        <div class="flex items-center justify-center w-6 h-6 pr-1">
+        <div class="flex items-center justify-center w-6 h-6 pr-2">
           {#if page.type == "home"}
             <SvgHome />
           {/if}
-          {#if page.type == "connections-table"}
-            <SvgTable />
+          {#if page.type == "broker-add"}
+            <SvgAdd />
           {/if}
-          {#if page.type == "connection-config"}
+          {#if page.type == "broker-edit"}
             <SvgConfig />
           {/if}
-          {#if page.type == "simulators-table"}
-            <SvgTable />
+          {#if page.type == "broker-detail"}
+            <SvgServer />
           {/if}
-          {#if page.type == "simulator-config"}
-            <SvgConfig />
-          {/if}
-          {#if page.type == "simulator-detail"}
-            <SvgSimulator />
-          {/if}
-
-          {#if page.type == "queue"}
+          {#if page.type == "queue-detail"}
             <SvgQueue />
+          {/if}
+          {#if page.type == "message-move"}
+            <SvgDuplicate />
+          {/if}
+          {#if page.type == "message-detail"}
+            <SvgInfo />
           {/if}
           {#if page.type == "export"}
             <SvgExport />

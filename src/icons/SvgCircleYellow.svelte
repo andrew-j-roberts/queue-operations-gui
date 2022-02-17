@@ -1,0 +1,11 @@
+<svg
+  fill="#FDDA0D"
+  stroke="#FDDA0D"
+  stroke-width="8"
+  stroke-dashoffset="0"
+  stroke-dasharray="0"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 100 100"><circle cx="50" cy="50" r="25" /></svg
+>

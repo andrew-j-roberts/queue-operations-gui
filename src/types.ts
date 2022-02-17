@@ -1,8 +1,8 @@
-import { Writable, writable, readable, get } from "svelte/store";
-import { createMachine, interpret } from "@xstate/fsm";
-import { useMachine } from "./utils";
+import { getCurrentTimestamp_UTC } from "./utils";
 
-// ui
+/**
+ * ui
+ */
 export interface Page {
   id: string;
   type: PageType;
@@ -11,99 +11,122 @@ export interface Page {
 type PageType =
   | "none"
   | "home"
-  | "connections-table"
-  | "connection-config"
-  | "simulators-table"
-  | "simulator-config"
-  | "simulator-detail";
+  | "broker-add"
+  | "broker-edit"
+  | "broker-detail"
+  | "queue-detail"
+  | "message-move"
+  | "message-detail";
 
 export interface Widget {
   type: WidgetType;
 }
-type WidgetType = "none" | "simulators" | "queues";
+type WidgetType = "none" | "queues";
 
-// event brokers
+/**
+ * app
+ */
+
+// connection
 export interface EventBrokerConnection {
-  id: string;
-  userType: UserType;
+  type: UserEnum;
   hostUrl: string;
   msgVpn: string;
   username: string;
   password: string;
 }
-export const defaultEventBrokerConnection: EventBrokerConnection = {
-  id: "SMF TLS - software defaults",
-  userType: "Messaging",
-  hostUrl: "localhost:55443",
-  msgVpn: "default",
-  username: "default",
-  password: "",
-};
-type UserType = "Messaging" | "SEMP";
-
-// simulators
-export interface Simulator {
-  id: string;
-  messagingClientType: MessagingClient;
-  simulatorType: SimulatorType;
-  connectionDetails: EventBrokerConnection;
-  publishRateMs: number;
-  status: SimulatorStatus;
-  session: Session;
+export enum UserEnum {
+  Data = "DATA",
+  Management = "MANAGEMENT",
 }
-export const defaultSimulator: Simulator = {
-  id: "order–create - solclientjs",
-  messagingClientType: "solclientjs",
-  simulatorType: "order-create",
-  connectionDetails: defaultEventBrokerConnection,
-  publishRateMs: 1000,
-  status: "new",
-  session: null,
+
+// queue manager sessions
+export interface BrokerSession {
+  name: string;
+  dataCredentials: EventBrokerConnection;
+  managementCredentials: EventBrokerConnection;
+  lastStatus: StatusEnum;
+  lastStatusTimestamp: string;
+  queues?: object[];
+  queueBrowserRef?: any;
+  messages?: Record<string, object>;
+  sempMessages?: Record<string, object>;
+  publisherRef?: any;
+}
+export enum StatusEnum {
+  new = "NEW",
+  waiting = "WAITING",
+  success = "SUCCESS",
+  error = "ERROR",
+}
+// export const defaultBrokerSession: BrokerSession = {
+//   name: "localhost",
+//   dataCredentials: {
+//     type: UserEnum.Data,
+//     hostUrl: "https://localhost:443",
+//     msgVpn: "default",
+//     username: "default",
+//     password: "default",
+//   },
+//   managementCredentials: {
+//     type: UserEnum.Management,
+//     hostUrl: "http://localhost:8080/SEMP/v2/monitor",
+//     msgVpn: "default",
+//     username: "default",
+//     password: "default",
+//   },
+//   lastStatus: StatusEnum.new,
+//   lastStatusTimestamp: getCurrentTimestamp_UTC(),
+//   queues: [],
+//   queueBrowserRef: null,
+//   messages: {},
+//   sempMessages: {},
+//   publisherRef: null,
+// };
+export const defaultBrokerSession: BrokerSession = {
+  name: "ajr",
+  dataCredentials: {
+    type: UserEnum.Data,
+    hostUrl: "wss://mr1bj0dfde8rbj.messaging.solace.cloud:443",
+    msgVpn: "ajr",
+    username: "solace-cloud-client",
+    password: "ka9m91jhj8dr79s9b87ef8kfbs",
+  },
+  managementCredentials: {
+    type: UserEnum.Management,
+    hostUrl: "https://mr1bj0dfde8rbj.messaging.solace.cloud:943/SEMP/v2/monitor",
+    msgVpn: "ajr",
+    username: "ajr-admin",
+    password: "ud29d25c8bjl3pf08dpkeq5pfb",
+  },
+  lastStatus: StatusEnum.new,
+  lastStatusTimestamp: getCurrentTimestamp_UTC(),
+  queues: [],
+  queueBrowserRef: null,
+  messages: {},
+  sempMessages: {},
+  publisherRef: null,
 };
 
-type MessagingClient = "solclientjs" | "MQTT.js" | "REST";
-type SimulatorType = "order-create" | "order-validate";
-type SimulatorStatus = "new" | "starting" | "running" | "stopped" | "completed" | "error";
+// log manager sessions
 
-// sessions
-export interface Session {
-  state: any; // state machine gets to any it up, too bad
-  ref: any; // messaging client
-  send?: (payload: any, topic: string) => void;
-  subscribe?: (topic: string) => void;
-  consume?: (queue: string) => void;
+export interface Log {
+  groupIds: string[];
+  timestamp: string;
+  message: string;
 }
-export function createSessionMachine() {
-  return writable(
-    useMachine(
-      createMachine({
-        id: "sessionMachine",
-        initial: "disconnected",
-        states: {
-          disconnected: {
-            on: {
-              CONNECT_REQUEST: "connecting",
-            },
-          },
-          connecting: {
-            on: {
-              DISCONNECTED: "disconnected",
-              UP_NOTICE: "connected",
-              ERROR: "error",
-            },
-          },
-          connected: {
-            on: {
-              DISCONNECTED: "disconnected",
-            },
-          },
-          error: {
-            on: {
-              CONNECT_REQUEST: "connecting",
-            },
-          },
-        },
-      })
-    )
-  );
+
+/**
+ * clients
+ */
+
+// TODO: other forms of auth
+export interface Request {
+  baseUrl: string;
+  endpoint: string;
+  queryString?: string;
+  basicAuthUsername: string;
+  basicAuthPassword: string;
+  headers: Headers;
+  body?: string; // expects application to serialize
 }

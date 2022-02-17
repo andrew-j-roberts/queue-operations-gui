@@ -1,9 +1,10 @@
-import { Writable, writable, readable, get } from "svelte/store";
-import type { Page, Widget, EventBrokerConnection, Simulator } from "./types";
-import { defaultEventBrokerConnection, defaultSimulator } from "./types";
+import { Writable, writable, get, derived } from "svelte/store";
+import type { Page, Widget, Log, BrokerSession } from "./types";
+import { defaultBrokerSession } from "./types";
+import { getCurrentTimeHHMMSS } from "./utils";
 
-// ui
-export const openWidget: Writable<Widget> = writable({ type: "none" });
+// ui, navigation
+export const openWidget: Writable<Widget> = writable({ type: "queues" });
 export const openPages: PagesStore = createPagesStore();
 export const selectedPage: Writable<Page> = writable({ id: "", type: "none" });
 
@@ -29,78 +30,64 @@ function createPagesStore() {
   };
 }
 
-// event broker connection details
-export const connectionOptions: ConnectionOptionsStore = createConnectionOptionsStore();
+// queue manager
+export const queueManager: QueueManagerStore = createQueueManagerStore();
 
-interface ConnectionOptionsStore {
-  subscribe: Writable<Record<string, EventBrokerConnection>>["subscribe"];
-  save: (connectionOption: EventBrokerConnection) => void;
-  delete: (connectionOption: EventBrokerConnection) => void;
+interface QueueManagerStore {
+  subscribe: Writable<Record<string, BrokerSession>>["subscribe"];
+  save: (brokerSession: BrokerSession) => void;
+  delete: (brokerSession: BrokerSession) => void;
 }
-function createConnectionOptionsStore(): ConnectionOptionsStore {
-  let defaultObj: Record<string, EventBrokerConnection> = {
-    [defaultEventBrokerConnection.id]: defaultEventBrokerConnection,
-  };
-  const { subscribe, set, update } = writable(defaultObj);
+
+function createQueueManagerStore(): QueueManagerStore {
+  let defaultObj: Record<string, BrokerSession> = { ajr: defaultBrokerSession };
+  const { subscribe, update } = writable(defaultObj);
 
   return {
     subscribe,
-    save: (config: EventBrokerConnection) =>
-      update((connectionOptions: Record<string, EventBrokerConnection>) => {
-        return { ...connectionOptions, [config.id]: config };
+    save: (brokerSession: BrokerSession) =>
+      update((brokerSessions: Record<string, BrokerSession>) => {
+        return { ...brokerSessions, [brokerSession.name]: brokerSession };
       }),
-    delete: (config: EventBrokerConnection) =>
-      update((connectionOptions: Record<string, EventBrokerConnection>) => {
-        delete connectionOptions[config.id];
-        return { ...connectionOptions };
+    delete: (brokerSession: BrokerSession) =>
+      update((brokerSessions: Record<string, BrokerSession>) => {
+        delete brokerSessions[brokerSession.name];
+        return { ...brokerSessions };
       }),
   };
 }
 
-// simulators
-export const simulators: SimulatorsStore = createSimulatorStore();
-
-interface SimulatorsStore {
-  subscribe: Writable<Record<string, Simulator>>["subscribe"];
-  save: (simulator: Simulator) => void;
-  delete: (simulator: Simulator) => void;
-  start: (simulator: Simulator) => void;
-  stop: (simulator: Simulator) => void;
+export function existsInQueueManager(brokerSessionName: string): boolean {
+  return !!get(queueManager)[brokerSessionName]; // return boolean value
 }
-function createSimulatorStore(): SimulatorsStore {
-  let defaultObj: Record<string, Simulator> = { [defaultSimulator.id]: defaultSimulator };
-  const { subscribe, set, update } = writable(defaultObj);
+
+// logs
+export const logs: LogStore = createLogStore();
+
+interface LogStore {
+  subscribe: Writable<Log[]>["subscribe"];
+  write: (log: Log) => void;
+}
+
+function createLogStore(): LogStore {
+  let defaultObj: Log[] = [
+    {
+      groupIds: ["info"],
+      message: "Started queue manager session.",
+      timestamp: getCurrentTimeHHMMSS(),
+    },
+  ];
+  const { subscribe, update } = writable(defaultObj);
 
   return {
     subscribe,
-    save: (simulator: Simulator) =>
-      update((simulators: Record<string, Simulator>) => {
-        return { ...simulators, [simulator.id]: simulator };
-      }),
-    delete: (simulator: Simulator) =>
-      update((simulators: Record<string, Simulator>) => {
-        delete simulators[simulator.id];
-        return { ...simulators, [simulator.id]: simulator };
-      }),
-    start: (simulator: Simulator) => {
-      console.log("START");
-    },
-    stop: (simulator: Simulator) => {
-      console.log("STOP");
-    },
+    write: (log: Log) => update((logs: Log[]) => [...logs, log]),
   };
 }
 
-// session manager
-// const sessions: SessionsStore = createSessionsStore();
+// broker detail
+export function createBrokerLogStore(name: string) {
+  return derived(logs, ($logs) => $logs.filter((log: Log) => log.groupIds.includes(name)));
+}
 
-// interface SessionsStore {}
-// function createSessionsStore(): SessionsStore {}
-
-// // user config
-// export function createExport() {
-//   return {
-//     connectionOptions: [...get(connectionOptions).values()],
-//     simulators: [...get(simulators).values()],
-//   };
-// }
+// selected messages

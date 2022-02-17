@@ -1,8 +1,7 @@
 <script>
   import { openWidget } from "../stores";
-  import { noOpenWidget, simulatorsWidget, queueManagerWidget } from "../routes";
-  import SvgQueue from "./icons/SvgQueue.svelte";
-  import SvgSimulator from "./icons/SvgSimulator.svelte";
+  import { noOpenWidget, queueManagerWidget } from "../routes";
+  import SvgQueue from "../icons/SvgQueue.svelte";
 
   function handleSelection(widget) {
     if ($openWidget.type == widget.type) {
@@ -16,20 +15,9 @@
 <div class="flex flex-col items-center bg-gray-500">
   <button
     class="flex flex-col items-center w-full p-2 text-lg"
-    class:unselected={$openWidget.type != "simulators"}
-    class:selected={$openWidget.type == "simulators"}
-    on:click={() => handleSelection(simulatorsWidget)}
-  >
-    <div class="w-8 mr-1">
-      <SvgSimulator />
-    </div>
-    Simulators
-  </button>
-  <button
-    class="flex flex-col items-center w-full p-2 text-lg"
-    class:unselected={$openWidget.type != "queue-manager"}
-    class:selected={$openWidget.type == "queue-manager"}
-    on:click={() => handleSelection(simulatorsWidget)}
+    class:unselected={$openWidget.type != "queues"}
+    class:selected={$openWidget.type == "queues"}
+    on:click={() => handleSelection(queueManagerWidget)}
   >
     <div class="w-8 mr-1">
       <SvgQueue />
